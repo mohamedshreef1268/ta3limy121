@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision - منصة التعليم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #212325, #1a4fbf);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #ff6b6b;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #ff4757;
+        }
+
+        .footer {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #ff6b6b;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #liveStreamSection {
+            margin-top: 2rem;
+        }
+
+        #jitsi-container {
+            width: 100%;
+            height: 400px;
+            border: none;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- تسجيل الدخول -->
+        <div id="loginSection">
+            <h1>مرحبًا بكم في Vision</h1>
+            <p>منصة التعليم التفاعلي للأطفال</p>
+
+            <div class="form-group">
+                <input type="email" id="email" placeholder="البريد الإلكتروني">
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="كلمة المرور">
+            </div>
+            <button onclick="login()">تسجيل الدخول</button>
+
+            <div class="footer">
+                <p>ليس لديك حساب؟ <a href="#" onclick="register()">سجل الآن</a></p>
+            </div>
+        </div>
+
+        <!-- البث المباشر (للمدرسين فقط) -->
+        <div id="liveStreamSection" class="hidden">
+            <h2>غرفة البث المباشر</h2>
+            <button onclick="startLiveStream()">بدء البث</button>
+            <div id="jitsi-container"></div>
+        </div>
+    </div>
+
+    <!-- Firebase وJitsi -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://meet.jit.si/external_api.js"></script>
+    <script>
+        // تهيئة Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8X2XQ7X7X7X7X7X7X7X7X7X7X7X7X7X7X7X7X7",
+            authDomain: "vision-platform.firebaseapp.com",
+            projectId: "vision-platform",
+            storageBucket: "vision-platform.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:7X7X7X7X7X7X7X7X7X7X7X"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // تسجيل الدخول
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // التحقق من دور المستخدم (مدرس)
+                if (email.includes('teacher')) {
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('liveStreamSection').classList.remove('hidden');
+                } else {
+                    alert('أنت لست مدرسًا!');
+                }
+            } catch (error) {
+                alert('خطأ في تسجيل الدخول: ' + error.message);
+            }
+        }
+
+        // تسجيل جديد
+        async function register() {
+            const email = prompt("أدخل بريدك الإلكتروني:");
+            const password = prompt("أدخل كلمة المرور:");
+
+            try {
+                await firebase.auth().createUserWithEmailAndPassword(email, password);
+                alert("تم إنشاء الحساب بنجاح!");
+            } catch (error) {
+                alert("خطأ: " + error.message);
+            }
+        }
+
+        // بدء البث المباشر
+        function startLiveStream() {
+            const domain = 'meet.jit.si';
+            const options = {
+                roomName: 'Vision-Live-' + Math.random().toString(36).substring(7),
+                width: '100%',
+                height: 400,
+                parentNode: document.querySelector('#jitsi-container')
+            };
+            const api = new JitsiMeetExternalAPI(domain, options);
+        }
+    </script>
+</body>
+</html>
